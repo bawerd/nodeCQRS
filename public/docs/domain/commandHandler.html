@@ -1,0 +1,117 @@
+<!DOCTYPE html>  <html> <head>   <title>commandHandler.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="commandHandler.html">                 commandHandler.js               </a>                                           <a class="source" href="itemAggregate.html">                 itemAggregate.js               </a>                                           <a class="source" href="server.html">                 server.js               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               commandHandler.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>               <p>here all the magic happens to handle a command:</p>
+
+<ul>
+<li>pass it to aggregation root</li>
+<li>store the event to storage</li>
+<li>publishing event back to redis</li>
+</ul>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">redis</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;redis&#39;</span><span class="p">)</span>
+  <span class="p">,</span> <span class="nx">colors</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./colors&#39;</span><span class="p">)</span>
+  <span class="p">,</span> <span class="nx">async</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;async&#39;</span><span class="p">)</span>
+  <span class="p">,</span> <span class="nx">items</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./itemAggregate&#39;</span><span class="p">)</span>
+  <span class="p">,</span> <span class="nx">eventstore</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;eventstore&#39;</span><span class="p">)</span>
+  <span class="p">,</span> <span class="nx">storage</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;eventstore.redis&#39;</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>create a redis client - we will use this later to get new aggregateIds</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">db</span> <span class="o">=</span> <span class="nx">redis</span><span class="p">.</span><span class="nx">createClient</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>create a publisher which we use later to publish committed events back. <br />
+just use another redis client and publish events to the <em>events channel</em></p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">publisher</span> <span class="o">=</span> <span class="p">{</span>
+    
+    <span class="nx">evt</span><span class="o">:</span> <span class="nx">redis</span><span class="p">.</span><span class="nx">createClient</span><span class="p">(),</span>
+
+    <span class="nx">publish</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">msg</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">colors</span><span class="p">.</span><span class="nx">green</span><span class="p">(</span><span class="s1">&#39;\npublishing event to redis:&#39;</span><span class="p">));</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">msg</span><span class="p">);</span>
+
+        <span class="nx">publisher</span><span class="p">.</span><span class="nx">evt</span><span class="p">.</span><span class="nx">publish</span><span class="p">(</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="nx">msg</span><span class="p">);</span>
+    <span class="p">}</span>
+      
+<span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>for <em>EventSourcing</em> we use <a href="https://github.com/KABA-CCEAC/nodeEventStore">nodeEventStore</a>:</p>
+
+<p>just create an instance and use one of the provided database providers</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">es</span> <span class="o">=</span> <span class="nx">eventstore</span><span class="p">.</span><span class="nx">createStore</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <p>create a storage instance for the eventstore. when getting the client via callback 
+configure the eventstore to use it and also inject the publisher implementation.</p>
+
+<p>finally start the eventstore instance so it will publish committed events to the provided 
+publisher.</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">storage</span><span class="p">.</span><span class="nx">createStorage</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">db</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">es</span><span class="p">.</span><span class="nx">configure</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+        <span class="nx">es</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">db</span><span class="p">);</span>
+        <span class="nx">es</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">publisher</span><span class="p">);</span>
+    <span class="p">});</span>
+
+    <span class="nx">es</span><span class="p">.</span><span class="nx">start</span><span class="p">();</span>
+<span class="p">});</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <p>for simplicity just map command names to event names. remove the command and change the message's id.
+in fact we just send back the received data with minor changes</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="p">{</span>
+
+    <span class="nx">mappings</span><span class="o">:</span> <span class="p">{</span>
+            <span class="nx">createItem</span><span class="o">:</span> <span class="s1">&#39;itemCreated&#39;</span><span class="p">,</span>
+            <span class="nx">changeItem</span><span class="o">:</span> <span class="s1">&#39;itemChanged&#39;</span><span class="p">,</span>
+            <span class="nx">deleteItem</span><span class="o">:</span> <span class="s1">&#39;itemDeleted&#39;</span>
+    <span class="p">},</span>
+
+    <span class="nx">toEvent</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cmd</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">cmd</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">cmd</span><span class="p">.</span><span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;_event_0&#39;</span><span class="p">;</span>
+        <span class="nx">cmd</span><span class="p">.</span><span class="nx">event</span> <span class="o">=</span> <span class="nx">map</span><span class="p">.</span><span class="nx">mappings</span><span class="p">[</span><span class="nx">cmd</span><span class="p">.</span><span class="nx">command</span><span class="p">]</span> <span class="o">?</span> <span class="nx">map</span><span class="p">.</span><span class="nx">mappings</span><span class="p">[</span><span class="nx">cmd</span><span class="p">.</span><span class="nx">command</span><span class="p">]</span> <span class="o">:</span> <span class="s1">&#39;unknown&#39;</span><span class="p">;</span>
+        <span class="k">delete</span> <span class="nx">cmd</span><span class="p">.</span><span class="nx">command</span><span class="p">;</span>
+        <span class="k">return</span> <span class="nx">cmd</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-7">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-7">&#182;</a>               </div>               <p>the commandHandler does the heavy lifting:</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">commandHandler</span> <span class="o">=</span> <span class="p">{</span>
+    
+    <span class="nx">handle</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">cmd</span><span class="p">)</span> <span class="p">{</span>
+        
+        <span class="kd">var</span> <span class="nx">cmdName</span> <span class="o">=</span> <span class="nx">cmd</span><span class="p">.</span><span class="nx">command</span>
+          <span class="p">,</span> <span class="nx">id</span> <span class="o">=</span> <span class="nx">cmd</span><span class="p">.</span><span class="nx">payload</span><span class="p">.</span><span class="nx">id</span></pre></div>             </td>           </tr>                               <tr id="section-8">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-8">&#182;</a>               </div>               <p><strong>don't do this at home:</strong> for simplicity we create the event already outside the aggregate - in a real system 
+you should create the event inside the aggregate (success or error), but as we only mirroring 
+the command back we take this shortcut.</p>             </td>             <td class="code">               <div class="highlight"><pre>          <span class="p">,</span> <span class="nx">evt</span> <span class="o">=</span> <span class="nx">map</span><span class="p">.</span><span class="nx">toEvent</span><span class="p">(</span><span class="nx">cmd</span><span class="p">);</span>
+
+        <span class="nx">evt</span><span class="p">.</span><span class="nx">time</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">();</span>
+
+        <span class="nx">async</span><span class="p">.</span><span class="nx">waterfall</span><span class="p">([</span></pre></div>             </td>           </tr>                               <tr id="section-9">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-9">&#182;</a>               </div>               <p>create an instance of itemAggregate <br />
+if the command provides no id (=createItem) - get a new id from redis db</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">function</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">db</span><span class="p">.</span><span class="nx">incr</span><span class="p">(</span><span class="s1">&#39;nextItemId&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="kd">var</span> <span class="nx">newId</span> <span class="o">=</span> <span class="s1">&#39;item:&#39;</span> <span class="o">+</span> <span class="nx">id</span><span class="p">;</span>
+                        
+                        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">colors</span><span class="p">.</span><span class="nx">cyan</span><span class="p">(</span><span class="s1">&#39;create a new aggregate with id= &#39;</span> <span class="o">+</span> <span class="nx">newId</span><span class="p">));</span>
+                        
+                        <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">items</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">newId</span><span class="p">));</span>
+                    <span class="p">});</span>
+                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">colors</span><span class="p">.</span><span class="nx">cyan</span><span class="p">(</span><span class="s1">&#39;create existing aggregate with id= &#39;</span> <span class="o">+</span> <span class="nx">id</span><span class="p">));</span>
+                    
+                    <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">items</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">id</span><span class="p">));</span>
+                <span class="p">}</span>
+            <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-10">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-10">&#182;</a>               </div>               <p>load the eventstream (history) for the given id from eventstore</p>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">function</span><span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+                
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">colors</span><span class="p">.</span><span class="nx">cyan</span><span class="p">(</span><span class="s1">&#39;load history for id= &#39;</span> <span class="o">+</span>  <span class="nx">item</span><span class="p">.</span><span class="nx">id</span><span class="p">));</span>
+                <span class="nx">es</span><span class="p">.</span><span class="nx">getEventStream</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">stream</span><span class="p">)</span> <span class="p">{</span>                    
+                    <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">item</span><span class="p">,</span> <span class="nx">stream</span><span class="p">);</span>
+                <span class="p">});</span>
+            <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-11">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-11">&#182;</a>               </div>               <p>handle the command on aggregate</p>
+
+<ul>
+<li>call loadFromHistory to apply all past events</li>
+<li>call the function matching the commandName</li>
+<li>add the uncommitted event to the eventstream and commit it <br />
+the event will be published in eventstore after successful commit   </li>
+</ul>             </td>             <td class="code">               <div class="highlight"><pre>            <span class="kd">function</span><span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">stream</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">colors</span><span class="p">.</span><span class="nx">cyan</span><span class="p">(</span><span class="s1">&#39;apply existing events &#39;</span> <span class="o">+</span> <span class="nx">stream</span><span class="p">.</span><span class="nx">events</span><span class="p">.</span><span class="nx">length</span><span class="p">));</span>
+                <span class="nx">item</span><span class="p">.</span><span class="nx">loadFromHistory</span><span class="p">(</span><span class="nx">stream</span><span class="p">.</span><span class="nx">events</span><span class="p">);</span>
+
+
+                <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">colors</span><span class="p">.</span><span class="nx">magenta</span><span class="p">(</span><span class="s1">&#39;apply new event &#39;</span> <span class="o">+</span> <span class="nx">evt</span><span class="p">.</span><span class="nx">event</span> <span class="o">+</span> <span class="s1">&#39; to aggregate&#39;</span><span class="p">));</span>
+                <span class="nx">item</span><span class="p">[</span><span class="nx">cmdName</span><span class="p">](</span><span class="nx">evt</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">uncommitted</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">colors</span><span class="p">.</span><span class="nx">red</span><span class="p">(</span><span class="nx">err</span><span class="p">));</span>
+                    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                        <span class="nx">stream</span><span class="p">.</span><span class="nx">addEvent</span><span class="p">(</span><span class="nx">uncommitted</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+                        <span class="nx">stream</span><span class="p">.</span><span class="nx">commit</span><span class="p">();</span>
+                    <span class="p">}</span>
+                <span class="p">});</span>
+            <span class="p">}</span>
+
+        <span class="p">]);</span>    
+
+    <span class="p">}</span>
+
+<span class="p">};</span>
+
+<span class="nx">exports</span><span class="p">.</span><span class="nx">handle</span> <span class="o">=</span> <span class="nx">commandHandler</span><span class="p">.</span><span class="nx">handle</span><span class="p">;</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

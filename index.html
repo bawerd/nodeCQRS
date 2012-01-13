@@ -1,0 +1,98 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>nodeEventStore: Eventsourcing for node.js</title>
+        <link rel='stylesheet' href='public/css/main.css' type='text/css' media='all' />
+        <link rel="stylesheet" href="public/css/prettify.css" type="text/css" />
+        <link rel="stylesheet" href="public/css/flexible-nav.min.css" type="text/css" />
+        <script type="text/javascript" src="public/js/jquery-1.6.4.min.js"></script>
+        <script type="text/javascript" src="public/js/prettify.js"></script>
+        <script type="text/javascript" src="public/js/flexible-nav.min.js"></script>
+</head>
+
+<body>
+
+<div id="forkme">
+    <a href="https://github.com/jamuhl/nodeCQRS"><img src="public/img/gihub_ribbon.png"></a>
+</div>
+
+<header>
+    <a href="">
+        <h1 id="title" style="display: none;">nodeCQRS</h1><br />
+        <h2 id="subtitle" style="display: none;">Sample implementation of CQRS and EventSourcing in node.js</h2>
+    </a>
+</header>
+
+<section id='content'>
+
+<h1>Introduction</h1>
+
+<p>The project goal is to provide a tiny sample how to approach (D)DDD, CQRS and EventSourcing 
+in node.js. Don't take this as best practice or as starting point for a real implementation:</p>
+
+<p>This sample implementation of CQRS / Eventsourcing is using:</p>
+
+<ul>
+<li><a href="http://redis.io/">redis</a> for Pub/Sub and Storage</li>
+<li><a href="https://github.com/KABA-CCEAC/nodeEventStore">nodeEventStore</a> for EventSourcing including it's redis storage implementation.</li>
+</ul>
+
+<h3>get it up and running</h3>
+
+<ol>
+<li><p>start server in <em>host</em> and <em>domain</em> folder</p>
+
+<pre><code><span class="pln">node server</span><span class="pun">.</span><span class="pln">js<br /></span></code></pre></li>
+<li><p>direct your browser to </p>
+
+<pre><code><span class="pln">http</span><span class="pun">:</span><span class="com">//localhost:3000</span><span class="pln"><br /></span></code></pre></li>
+</ol>
+
+<h1>Read the annotated code</h1>
+
+<ul>
+<li><a href="public/docs/domain/server.html">domain</a> - commandHandling, using nodeEventStore, Publishing.</li>
+<li><a href="public/docs/host/server.html">host</a> - webserver, socket.io, eventdenormalizing.</li>
+<li><a href="public/docs/client/bootstrap.html">clientside</a>. - MVVM, incrementel updates via events</li>
+</ul>
+
+</section>
+
+<footer>
+        <p>Copyright 2012 Jan Mühlemann</p>
+</footer>
+
+
+<script type="text/javascript" >
+    $(window).load(function () {
+        $('#title').fadeIn(1000, function(){
+            $('#subtitle').fadeIn(2000);            
+        });
+
+        var nav = new FlexibleNavMaker('#content h1, #content h2, #content h3').make().prependTo('body');
+        new FlexibleNav(nav);
+        $(".flexible-nav").hide();
+    });
+
+    var fadeout = null;
+    window.onscroll = function() {
+        
+        clearTimeout(fadeout);
+                
+        $(".flexible-nav").fadeIn('slow')
+        
+        fadeout = setTimeout(outlineFadeOut,4000);
+    }
+    
+    var outlineFadeOut = function() {
+        $(".flexible-nav").fadeOut()
+    }
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>  <html> <head>   <title>itemAggregate.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>            <div id="jump_to">         Jump To &hellip;         <div id="jump_wrapper">           <div id="jump_page">                                           <a class="source" href="commandHandler.html">                 commandHandler.js               </a>                                           <a class="source" href="itemAggregate.html">                 itemAggregate.js               </a>                                           <a class="source" href="server.html">                 server.js               </a>                        </div>         </div>       </div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               itemAggregate.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>               <p>the itemAggregate is the aggregationRoot for a single item all commands concerning this 
+aggregate are handled inside this object.</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">colors</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./colors&#39;</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <p>the itemAggregate has an internal state (id, text, destoyed)</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">Item</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="nx">id</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">_destroy</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">uncommittedEvents</span> <span class="o">=</span> <span class="p">[];</span>
+<span class="p">};</span>
+
+<span class="nx">Item</span><span class="p">.</span><span class="nx">prototype</span> <span class="o">=</span> <span class="p">{</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <p>each <strong>command</strong> is mapped to an aggregate function <br />
+after validation the <strong>event</strong> is applied to the object itself (changing 
+the internal state of the aggregate)</p>
+
+<p>when all operations are done the callback will be called. </p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nx">createItem</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">evt</span><span class="p">.</span><span class="nx">payload</span><span class="p">.</span><span class="nx">id</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">id</span><span class="p">;</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="nx">evt</span><span class="p">.</span><span class="nx">payload</span><span class="p">.</span><span class="nx">text</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;It is not allowed to set an item text to empty string.&#39;</span><span class="p">));</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">evt</span><span class="p">);</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">uncommittedEvents</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+            
+    <span class="nx">changeItem</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">evt</span><span class="p">.</span><span class="nx">payload</span><span class="p">.</span><span class="nx">text</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;It is not allowed to set an item text to empty string.&#39;</span><span class="p">));</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">evt</span><span class="p">);</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">uncommittedEvents</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+            
+    <span class="nx">deleteItem</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">evt</span><span class="p">);</span>
+        <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">uncommittedEvents</span><span class="p">);</span>
+    <span class="p">},</span>
+        </pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>apply the event to the aggregate calling the matching function</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nx">apply</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span> <span class="p">{</span>     
+        <span class="k">this</span><span class="p">[</span><span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nx">evt</span><span class="p">.</span><span class="nx">event</span><span class="p">](</span><span class="nx">evt</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">evt</span><span class="p">.</span><span class="nx">fromHistory</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">uncommittedEvents</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">evt</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+        
+    <span class="nx">_itemCreated</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">text</span> <span class="o">=</span> <span class="nx">evt</span><span class="p">.</span><span class="nx">payload</span><span class="p">.</span><span class="nx">text</span><span class="p">;</span>
+    <span class="p">},</span>
+
+    <span class="nx">_itemChanged</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">text</span> <span class="o">=</span> <span class="nx">evt</span><span class="p">.</span><span class="nx">payload</span><span class="p">.</span><span class="nx">text</span><span class="p">;</span>
+    <span class="p">},</span>
+    
+    <span class="nx">_itemDeleted</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">evt</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">_destroy</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="p">},</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <p>function to reload an itemAggregate from it's past events by 
+applying each event again</p>             </td>             <td class="code">               <div class="highlight"><pre>    <span class="nx">loadFromHistory</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">history</span><span class="p">)</span> <span class="p">{</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">len</span> <span class="o">=</span> <span class="nx">history</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">len</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">e</span> <span class="o">=</span> <span class="nx">history</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">payload</span><span class="p">;</span>
+            <span class="nx">e</span><span class="p">.</span><span class="nx">fromHistory</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">e</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">};</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <p>export the modules function to create a new itemAggregate</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">exports</span><span class="p">.</span><span class="nx">create</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Item</span><span class="p">(</span><span class="nx">id</span><span class="p">);</span>
+<span class="p">};</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 
